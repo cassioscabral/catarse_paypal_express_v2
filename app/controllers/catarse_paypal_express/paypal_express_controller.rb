@@ -8,19 +8,6 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
   def review
   end
 
-  def refund
-    refund_request = gateway.refund(nil, contribution.payment_id)
-
-
-    if refund_request.success?
-      flash[:notice] = I18n.t('projects.contributions.refund.success')
-    else
-      flash[:alert] = refund_request.try(:message) || I18n.t('projects.contributions.refund.error')
-    end
-
-    redirect_to main_app.admin_contributions_path
-  end
-
   def ipn
     if contribution && notification.acknowledge && (contribution.payment_method == 'PayPal' || contribution.payment_method.nil?)
       process_paypal_message params
@@ -115,15 +102,7 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
   end
 
   def gateway
-    if PaymentEngines.configuration[:paypal_username] and PaymentEngines.configuration[:paypal_password] and PaymentEngines.configuration[:paypal_signature]
-      @gateway ||= ActiveMerchant::Billing::PaypalExpressGateway.new({
-        login: PaymentEngines.configuration[:paypal_username],
-        password: PaymentEngines.configuration[:paypal_password],
-        signature: PaymentEngines.configuration[:paypal_signature]
-      })
-    else
-      puts "[PayPal] An API Certificate or API Signature is required to make requests to PayPal"
-    end
+    @gateway ||= CatarsePaypalExpress::Gateway.instance
   end
 
   protected

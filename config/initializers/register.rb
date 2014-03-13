@@ -4,8 +4,9 @@ begin
     review_path: ->(contribution) {
       CatarsePaypalExpress::Engine.routes.url_helpers.review_paypal_express_path(contribution)
     },
-    refund_path: ->(contribution) {
-      CatarsePaypalExpress::Engine.routes.url_helpers.refund_paypal_express_path(contribution)
+    can_do_refund?: true,
+    direct_refund: ->(contribution) {
+      CatarsePaypalExpress::ContributionActions.new(contribution).refund
     },
     locale: 'en'
   })
