@@ -7,7 +7,7 @@ App.addChild('PayPalForm', _.extend({
   },
 
   activate: function() {
-    this.loader = $('.loader');
+    this.loader = this.$('.loader img');
     this.parent.contributionId = $('input#contribution_id').val();
     this.parent.projectId = $('input#project_id').val();
   },
