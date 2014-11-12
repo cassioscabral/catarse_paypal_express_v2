@@ -2,6 +2,7 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
   include ActiveMerchant::Billing::Integrations
 
   skip_before_filter :force_http
+
   SCOPE = "projects.contributions.checkout"
   layout :false
 
@@ -31,7 +32,7 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
         cancel_return_url: cancel_paypal_express_url(id: contribution.id),
         currency_code: 'BRL',
         description: t('paypal_description', scope: SCOPE, :project_name => contribution.project.name, :value => contribution.display_value),
-        notify_url: ipn_paypal_express_index_url
+        notify_url: ipn_paypal_express_index_url(subdomain: 'www')
       })
 
       process_paypal_message response.params
