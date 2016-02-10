@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 
   s.add_dependency "rails", "~> 4.0"
-  s.add_dependency "activemerchant", ">= 1.34.0"
+  s.add_dependency "activemerchant", "1.43.3"
   s.add_dependency "slim-rails"
 
   s.add_development_dependency "rspec-rails", '~> 2.14.0'
