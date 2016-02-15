@@ -31,12 +31,22 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
         return_url: success_paypal_express_url(id: contribution.id),
         cancel_return_url: cancel_paypal_express_url(id: contribution.id),
         currency_code: 'BRL',
-        description: t('paypal_description', scope: SCOPE, :project_name => contribution.project.name, :value => contribution.display_value),
+        description: t('paypal_description', scope: SCOPE, :project_name => contribution.project.name, :value => contribution.value),
         notify_url: ipn_paypal_express_index_url(subdomain: 'www')
       })
 
       process_paypal_message response.params
       contribution.update_attributes payment_method: 'PayPal', payment_token: response.token
+      attributes = {contribution: contribution, gateway: 'Credits', value: contribution.value, payment_method: 'PayPal'}
+      @payment = PaymentEngines.new_payment(attributes)
+
+      puts '==================='
+      pp @payment
+      puts '==================='
+      pp response
+      puts '==================='
+      contribution.payments << @payment
+      contribution.save!
 
       redirect_to gateway.redirect_url_for(response.token)
     rescue Exception => e
@@ -56,7 +66,8 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
 
       # we must get the deatils after the purchase in order to get the transaction_id
       process_paypal_message purchase.params
-      contribution.update_attributes payment_id: purchase.params['transaction_id'] if purchase.params['transaction_id']
+      # TODO transaction_id gives a different payment id
+      contribution.update_attributes paypal_transaction_identifier: purchase.params['transaction_id'] if purchase.params['transaction_id']
 
       flash[:success] = t('success', scope: SCOPE)
       redirect_to main_app.project_contribution_path(project_id: contribution.project.id, id: contribution.id)
@@ -74,7 +85,7 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
 
   def contribution
     @contribution ||= if params['id']
-                  PaymentEngines.find_payment(id: params['id'])
+                  PaymentEngines.find_contribution(params['id'])
                 elsif params['txn_id']
                   PaymentEngines.find_payment(payment_id: params['txn_id']) || (params['parent_txn_id'] && PaymentEngines.find_payment(payment_id: params['parent_txn_id']))
                 end
@@ -89,7 +100,10 @@ class CatarsePaypalExpress::PaypalExpressController < ApplicationController
     elsif data["payment_status"]
       case data["payment_status"].downcase
       when 'completed'
-        contribution.confirm!
+        #TODO make this related to the payment
+        # contribution.confirm!
+        payment = contribution.payments.first
+        payment.pay unless payment.paid?
       when 'refunded'
         contribution.refund!
       when 'canceled_reversal'
